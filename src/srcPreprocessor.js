@@ -18,6 +18,7 @@
 const babel = require('@babel/core');
 
 const nameToFunc = {
+    'jsx': jsxPrep,
     'flow': stripFlowPrep,
     'hashbang': trimHashbangPrep
 };
@@ -51,6 +52,22 @@ function stripFlowPrep(src) {
     }).code;
 }
 
+function jsxPrep(src) {
+    src = babel.transform(src, {
+        presets: ["@babel/preset-env"],
+        plugins: [
+            ['@babel/plugin-transform-react-jsx',
+            {
+            pragma: 'callGraphCreateElement',
+            pragmaFrag: 'Fragment',
+            }],
+        ],
+        retainLines: true,
+        parserOpts: {strictMode: false}
+    }).code;
+    return src.replace(/callGraphCreateElement\(([^,]+), /g, '$1(')
+}
+
 /* Trim hashbang to avoid the parser blowing up
 Example:
     #!/usr/bin/env node
@@ -71,4 +88,5 @@ function trimHashbangPrep(src) {
 
 module.exports.applyPreps = applyPreps;
 module.exports.stripFlowPrep = stripFlowPrep;
+module.exports.jsxPrep = jsxPrep;
 module.exports.trimHashbangPrep = trimHashbangPrep;
